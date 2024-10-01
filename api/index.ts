@@ -3,6 +3,7 @@ import cors from "cors";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import taskRoutes from "./routes/task";
+import path from "path";
 
 const app = express();
 
@@ -21,11 +22,13 @@ mongoose
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.log(err));
 
-// Basic route
-app.get("/", (req: Request, res: Response) => {
-  res.send("Task Manager API");
-});
+// Basic route// Serve static files from the frontend
+app.use(express.static(path.join(__dirname, "../frontend/dist")));
 
+// Serve the React app for any non-API routes
+app.get("*", (req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, "../frontend/dist", "index.html"));
+});
 // Start the server
 const port = process.env.PORT || 5000;
 app.listen(port, () => {
