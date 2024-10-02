@@ -11,11 +11,9 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
-
-// Routes
 app.use("/api/tasks", taskRoutes);
 
-// MongoDB connection
+// Connect to MongoDB
 let cachedDb: typeof mongoose | null = null;
 
 async function connectToDatabase() {
@@ -29,10 +27,12 @@ async function connectToDatabase() {
   return db;
 }
 
-// Wrap the Express app to connect to the database before handling requests
-const handler = async (req: Request, res: Response) => {
-  await connectToDatabase();
-  return app(req, res);
-};
+// Routes
+app.get("/api", (req: Request, res: Response) => {
+  res.send("Hello, World!");
+});
 
-export default handler;
+module.exports = async (req: Request, res: Response) => {
+  await connectToDatabase();
+  app(req, res);
+};
