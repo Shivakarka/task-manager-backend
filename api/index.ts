@@ -3,34 +3,36 @@ import cors from "cors";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import taskRoutes from "./routes/task";
-import path from "path";
+
+dotenv.config();
 
 const app = express();
-
-// Load environment variables
-dotenv.config();
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Routes
 app.use("/api/tasks", taskRoutes);
 
-// Connect to MongoDB
-const mongoURI = process.env.MONGO_URI as string;
-mongoose
-  .connect(mongoURI)
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.log(err));
+// MongoDB connection
+let cachedDb: typeof mongoose | null = null;
 
-// Basic route// Serve static files from the frontend
-app.use(express.static(path.join(__dirname, "../frontend/dist")));
+async function connectToDatabase() {
+  if (cachedDb) {
+    return cachedDb;
+  }
 
-// Serve the React app for any non-API routes
-app.get("*", (req: Request, res: Response) => {
-  res.sendFile(path.join(__dirname, "../frontend/dist", "index.html"));
-});
-// Start the server
-const port = process.env.PORT || 5000;
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+  const mongoURI = process.env.MONGO_URI as string;
+  const db = await mongoose.connect(mongoURI);
+  cachedDb = db;
+  return db;
+}
+
+// Wrap the Express app to connect to the database before handling requests
+const handler = async (req: Request, res: Response) => {
+  await connectToDatabase();
+  return app(req, res);
+};
+
+export default handler;
